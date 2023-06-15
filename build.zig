@@ -1,5 +1,22 @@
 const std = @import("std");
 
+var _module: ?*std.build.Module = null;
+
+pub fn module(b: *std.Build) *std.build.Module {
+    if (_module) |m| return m;
+    _module = b.createModule(.{
+        .source_file = .{ .path = sdkPath("/src/main.zig") },
+    });
+    return _module.?;
+}
+
+fn sdkPath(comptime suffix: []const u8) []const u8 {
+    if (suffix[0] != '/') @compileError("suffix must be an absolute path");
+    return comptime blk: {
+        const root_dir = std.fs.path.dirname(@src().file) orelse ".";
+        break :blk root_dir ++ suffix;
+    };
+}
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -28,8 +45,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    // lib.addModule("clap", zigclap.module("clap"));
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
