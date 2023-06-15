@@ -13,6 +13,6 @@ Audio decoder that handles various formats and types. (Yes their is a wav decode
 **Folder of various files from the wild**
 
 ```zig
-    zig test 
+    zig build test 
 ```
 
