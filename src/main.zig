@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
-const nowav = @import("nowav.zig");
-const wavey = @import("wavey.zig");
+pub const nowav = @import("nowav.zig");
+pub const wavey = @import("wavey.zig");
 
 const Hint = struct {
     extension: ?[]const u8 = null,
