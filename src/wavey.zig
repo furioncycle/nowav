@@ -28,7 +28,7 @@ const Ids = enum {
 const WaveHeader = struct {
     fmt: Fmt,
     data: Data,
-    fact: ?Fact = null,
+    // fact: ?Fact = null,
     pub fn decode(reader: anytype) !WaveHeader {
         if (!(try parseId("RIFF", reader))) {
             return WaveErrors.NoRiffChunk;
@@ -61,7 +61,7 @@ const WaveHeader = struct {
                     len = w.data.length + @sizeOf([4]u8);
                 },
                 .Fact => {
-                    w.fact = try Fact.decode(reader);
+                    // w.fact = try Fact.decode(reader);
                 },
             }
         }
@@ -124,8 +124,8 @@ const Data = struct {
     }
 };
 
-pub fn decode(allocator: std.mem.Allocator, file: std.fs.File, reader: anytype) !Decoder(@TypeOf(reader)) {
-    return Decoder(@TypeOf(reader)).init(allocator, file, reader);
+pub fn decode(allocator: std.mem.Allocator, file: std.fs.File) !Decoder(@TypeOf(file.reader())) {
+    return Decoder(@TypeOf(file.reader())).init(allocator, file);
 }
 
 pub fn Decoder(comptime ReaderType: type) type {
@@ -137,12 +137,12 @@ pub fn Decoder(comptime ReaderType: type) type {
         file: std.fs.File,
         inner_reader: ReaderType,
 
-        pub fn init(allocator: std.mem.Allocator, file: std.fs.File, in_reader: ReaderType) !Self {
+        pub fn init(allocator: std.mem.Allocator, file: std.fs.File) !Self {
             return Self{
                 .allocator = allocator,
                 .file = file,
-                .inner_reader = in_reader,
-                .header = try WaveHeader.decode(in_reader),
+                .inner_reader = file.reader(),
+                .header = try WaveHeader.decode(file.reader()),
             };
         }
     };
@@ -155,8 +155,8 @@ fn parseId(id: []const u8, reader: anytype) !bool {
     return std.mem.eql(u8, &buf, id);
 }
 
-pub fn encode(allocator: std.mem.Allocator, file: std.fs.File, writer: anytype) !Encode(@TypeOf(writer)) {
-    return Encode(@TypeOf(writer)).init(allocator, file, writer);
+pub fn encode(allocator: std.mem.Allocator, file: std.fs.File) !Encode(@TypeOf(file.writer())) {
+    return Encode(@TypeOf(file.writer())).init(allocator, file);
 }
 
 pub fn Encode(comptime WriterType: type) type {
@@ -166,11 +166,11 @@ pub fn Encode(comptime WriterType: type) type {
         file: std.fs.File,
         inner_writer: WriterType,
 
-        pub fn init(allocator: std.mem.Allocator, file: std.fs.File, in_writer: WriterType) !Self {
+        pub fn init(allocator: std.mem.Allocator, file: std.fs.File) !Self {
             return Self{
                 .allocator = allocator,
                 .file = file,
-                .inner_writer = in_writer,
+                .inner_writer = file.writer(),
             };
         }
 
@@ -215,7 +215,7 @@ test "Read empty wave file" {
     const file = try std.fs.cwd().openFile("testSamples/doug.wav", .{});
     defer file.close();
 
-    try testing.expect(decode(testing.allocator, file, file.reader()) == WaveErrors.NoRiffChunk);
+    try testing.expect(decode(testing.allocator, file) == WaveErrors.NoRiffChunk);
 }
 
 test "Parse Header" {
@@ -240,14 +240,14 @@ test "Parse Header" {
         });
         defer file.close();
 
-        const Wavey = try encode(testing.allocator, file, file.writer());
+        const Wavey = try encode(testing.allocator, file);
         const v = try Wavey.writeHeader(h);
         try testing.expect(v == @sizeOf(WaveHeader));
     }
 
     const file = try std.fs.cwd().openFile("testSamples/dougRiff.wav", .{});
     defer file.close();
-    const Wavey = try decode(testing.allocator, file, file.reader());
+    const Wavey = try decode(testing.allocator, file);
 
     try testing.expectEqualDeep(h, Wavey.header);
 }
