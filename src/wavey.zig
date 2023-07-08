@@ -103,8 +103,8 @@ const Fmt = struct {
     fn decode(reader: anytype) !Fmt {
         return Fmt{
             .length = try reader.readInt(u32, .Little),
-            .audioFormat = @intToEnum(FormatType, try reader.readInt(u16, .Little)),
-            .numChannels = @intToEnum(Channels, try reader.readInt(u16, .Little)),
+            .audioFormat = @as(FormatType, @enumFromInt(try reader.readInt(u16, .Little))),
+            .numChannels = @as(Channels, @enumFromInt(try reader.readInt(u16, .Little))),
             .sampleRate = try reader.readInt(u32, .Little),
             .byteRate = try reader.readInt(u32, .Little),
             .blockAlign = try reader.readInt(u16, .Little),
@@ -177,8 +177,8 @@ pub fn Encode(comptime WriterType: type) type {
         pub fn writeFmt(self: Self, fmt: Fmt) !usize {
             _ = try self.inner_writer.write(&fmt.id);
             try self.inner_writer.writeInt(u32, fmt.length, .Little);
-            try self.inner_writer.writeInt(u16, @enumToInt(fmt.audioFormat), .Little);
-            try self.inner_writer.writeInt(u16, @enumToInt(fmt.numChannels), .Little);
+            try self.inner_writer.writeInt(u16, @intFromEnum(fmt.audioFormat), .Little);
+            try self.inner_writer.writeInt(u16, @intFromEnum(fmt.numChannels), .Little);
             try self.inner_writer.writeInt(u32, fmt.sampleRate, .Little);
             try self.inner_writer.writeInt(u32, fmt.byteRate, .Little);
             try self.inner_writer.writeInt(u16, fmt.blockAlign, .Little);
@@ -204,7 +204,7 @@ pub fn Encode(comptime WriterType: type) type {
 
             //Go back to write the file length
             try self.file.seekTo(RIFF.len);
-            try self.inner_writer.writeInt(u32, @intCast(u32, fmtLen) + @intCast(u32, dataLen), .Little);
+            try self.inner_writer.writeInt(u32, @as(u32, @intCast(fmtLen)) + @as(u32, @intCast(dataLen)), .Little);
 
             return fmtLen + dataLen;
         }

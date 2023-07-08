@@ -16,3 +16,11 @@ Audio decoder that handles various formats and types. (Yes their is a wav decode
     zig build test 
 ```
 
+## Nixos
+
+```bash
+  nix develop
+```
+The `flake` will give you a development environment for zig dev
+and currently follows master.
+
